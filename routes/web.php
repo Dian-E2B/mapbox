@@ -34,3 +34,5 @@ Route::get('/mapboxdraw', function () {
 
 Route::post('/saveLocation', [LocationController::class, 'store']);
 Route::post('/areas', [AreaController::class, 'store']);
+
+Route::get('/areas', [AreaController::class, 'retreive']);

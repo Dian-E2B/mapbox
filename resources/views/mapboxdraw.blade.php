@@ -66,82 +66,102 @@
 
             let isAddingMarker = false;
 
-            map.addSource('maine', {
-                'type': 'geojson',
-                'data': {
-                    'type': 'Feature',
-                    'geometry': {
-                        'type': 'Polygon',
-                        'coordinates': [
-                            [
-                                [125.821812, 7.397899],
-                                [125.822349, 7.397917],
-                                [125.822300, 7.399815],
-                                [125.821848, 7.398718],
-                                [125.821812, 7.397899]
-                            ]
-                        ]
-                    },
-                    'properties': {
-                        height: 15,
-                        color: '#3a86ff'
-                    }
+            // map.addSource('maine', {
+            //     'type': 'geojson',
+            //     'data': {
+            //         'type': 'Feature',
+            //         'geometry': {
+            //             'type': 'Polygon',
+            //             'coordinates': [
+            //                 [
+            //                     [125.821812, 7.397899],
+            //                     [125.822349, 7.397917],
+            //                     [125.822300, 7.399815],
+            //                     [125.821848, 7.398718],
+            //                     [125.821812, 7.397899]
+            //                 ]
+            //             ]
+            //         },
+            //         'properties': {
+            //             height: 15,
+            //             color: '#0000ff'
+            //         }
+            //     }
+            // });
+
+            $.ajax({
+                url: '/areas',
+                type: 'GET',
+                dataType: 'json',
+                success: function(areas) {
+                    areas.forEach((area, index) => {
+                        const sourceId = `polygon-${index}`;
+                        const layerId = `polygon-layer-${index}`;
+
+                        const coordinates = typeof area.coordinates === 'string' ?
+                            JSON.parse(area.coordinates) :
+                            area.coordinates;
+
+                        if (!map.getSource(sourceId)) {
+                            map.addSource(sourceId, {
+                                type: 'geojson',
+                                data: {
+                                    type: 'Feature',
+                                    geometry: {
+                                        type: 'Polygon',
+                                        coordinates: coordinates
+                                    },
+                                    properties: {
+                                        color: '#3a86ff',
+                                        height: 15
+                                    }
+                                }
+                            });
+                        }
+
+
+
+                        if (!map.getLayer(layerId)) {
+                            map.addLayer({
+                                id: layerId,
+                                type: 'fill',
+                                source: sourceId,
+                                layout: {},
+                                paint: {
+                                    'fill-color': '#0080ff',
+                                    'fill-opacity': 0.2,
+                                    'fill-outline-color': 'black'
+                                }
+                            });
+
+                            const outlineLayerId = layerId + '-outline';
+                            if (!map.getLayer(outlineLayerId)) {
+                                map.addLayer({
+                                    id: outlineLayerId,
+                                    type: 'line',
+                                    source: sourceId,
+                                    layout: {},
+                                    paint: {
+                                        'line-color': 'black',
+                                        'line-width': 3
+                                    }
+                                });
+                            }
+                        }
+
+
+
+                    });
+                },
+                error: function(xhr, status, error) {
+                    console.error('Failed to load polygons:', error);
                 }
             });
 
-            // 2. Add the 3D extrusion layer
-            map.addLayer({
-                'id': 'custom-building',
-                'type': 'fill-extrusion',
-                'source': 'maine',
-                'paint': {
-                    'fill-extrusion-color': ['get', 'color'],
-                    'fill-extrusion-height': ['get', 'height'],
-                    'fill-extrusion-base': 0,
-                    'fill-extrusion-opacity': 0.6
-                }
-            });
-
-            map.addLayer({
-                'id': 'maine',
-                'type': 'fill',
-                'source': 'maine', // reference the data source
-                'layout': {},
-                'paint': {
-                    'fill-color': '#0080ff', // blue color fill
-                    'fill-opacity': 0.5
-                }
-            });
-            // Add a black outline around the polygon.
-            map.addLayer({
-                'id': 'outline',
-                'type': 'line',
-                'source': 'maine',
-                'layout': {},
-                'paint': {
-                    'line-color': '#000',
-                    'line-width': 3
-                }
-            });
 
 
-            const offset = 0.0001;
-            const polygon = {
-                type: 'Feature',
-                geometry: {
-                    type: 'Polygon',
-                    coordinates: [
-                        [
-                            [125.821812, 7.397880], // bottom-left
-                            [125.822349, 7.397917], // bottom-right
-                            [125.822332, 7.399784], // top-right
-                            [125.821794, 7.399809], // top-left
-                            [125.821812, 7.397899] // close the polygon (same as first)
 
-                        ]
-                    ]
-                }
-            };
+
 
             //WOBLY PART
 

@@ -27,4 +27,10 @@ class AreaController extends Controller
 
     return response()->json(['success' => true]);
 }
+
+ public function retreive(Request $request)
+{
+   return response()->json(Area::all());
+   
+}
 }
