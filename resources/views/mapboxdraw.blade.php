@@ -34,14 +34,14 @@
     {{-- <div id='map' style='width: 400px; height: 300px;'></div> --}}
     <div id='map'></div>
 
-    <button id="add-marker-btn"
+    {{-- <button id="add-marker-btn"
         style="position: absolute; top: 10px; left: 10px; z-index: 1; padding: 10px; background: white; border: none; cursor: pointer;">
         ➕ Add Marker
-    </button>
+    </button> --}}
 
-    <button id="add-marker-btn"
+    <button id="add-marker-btn" onclick="DrawPolygon('draw_polygon')"
         style="position: absolute; top: 50px; left: 10px; z-index: 1; padding: 10px; background: white; border: none; cursor: pointer;">
-        Save Polygon
+        Add Polygon
     </button>
 
     <div class="calculation-box">
@@ -63,7 +63,7 @@
 
 
         map.on('load', () => {
-
+            Get();
             let isAddingMarker = false;
 
             // map.addSource('maine', {
@@ -89,6 +89,62 @@
             //     }
             // });
 
+
+
+
+
+
+
+
+            //WOBLY PART
+
+            map.addSource('mapbox-dem', {
+                type: 'raster-dem',
+                url: 'mapbox://mapbox.terrain-rgb',
+                tileSize: 512,
+                maxzoom: 14
+            });
+            map.setTerrain({
+                source: 'mapbox-dem',
+                exaggeration: 2.0
+            });
+
+
+
+
+
+            map.setPitch(60); // tilt camera
+            map.setBearing(-20);
+
+
+            const iconUrl = 'https://docs.mapbox.com/mapbox-gl-js/assets/custom_marker.png';
+
+
+            const el = document.createElement('div');
+            el.className = 'unclipped-marker';
+            el.style.backgroundImage = `url(${iconUrl})`;
+            el.style.width = '50px';
+            el.style.height = '50px';
+            el.style.backgroundSize = '30px 30px';
+            el.style.backgroundPosition = 'center 10px';
+            el.style.backgroundRepeat = 'no-repeat';
+
+            new mapboxgl.Marker({
+                    element: el,
+                    // offset: [0, -20],
+
+                })
+                .setPopup(new mapboxgl.Popup().setHTML('<h3>Main Office</h3>'))
+                .setLngLat(center)
+                .addTo(map);
+
+
+
+        });
+
+
+
+        function Get() {
             $.ajax({
                 url: '/areas',
                 type: 'GET',
@@ -157,90 +213,29 @@
                     console.error('Failed to load polygons:', error);
                 }
             });
+        }
 
 
 
-
-
-
-            //WOBLY PART
-
-            map.addSource('mapbox-dem', {
-                type: 'raster-dem',
-                url: 'mapbox://mapbox.terrain-rgb',
-                tileSize: 512,
-                maxzoom: 14
-            });
-            map.setTerrain({
-                source: 'mapbox-dem',
-                exaggeration: 2.0
-            });
-
-
-
-
-
-            map.setPitch(60); // tilt camera
-            map.setBearing(-20);
-
-
-            const iconUrl = 'https://docs.mapbox.com/mapbox-gl-js/assets/custom_marker.png';
-
-
-            const el = document.createElement('div');
-            el.className = 'unclipped-marker';
-            el.style.backgroundImage = `url(${iconUrl})`;
-            el.style.width = '50px';
-            el.style.height = '50px';
-            el.style.backgroundSize = '30px 30px';
-            el.style.backgroundPosition = 'center 10px';
-            el.style.backgroundRepeat = 'no-repeat';
-
-            new mapboxgl.Marker({
-                    element: el,
-                    // offset: [0, -20],
-
-                })
-                .setPopup(new mapboxgl.Popup().setHTML('<h3>Main Office</h3>'))
-                .setLngLat(center)
-                .addTo(map);
-
-
-
-        });
-
-
-
-
-
-
-
-        let currentPolygonCoords = [];
         const draw = new MapboxDraw({
             displayControlsDefault: false,
-            // Select which mapbox-gl-draw control buttons to add to the map.
             controls: {
                 polygon: true,
                 trash: true
             },
-            // Set mapbox-gl-draw to draw by default.
-            // The user does not have to click the polygon control button first.
-            defaultMode: 'draw_polygon'
+            defaultMode: 'simple_select' // start with select mode, no drawing
         });
-        map.addControl(draw);
 
-        map.on('draw.create', updateArea);
+        map.addControl(draw);
+        map.on('draw.create', onDrawCreate);
         map.on('draw.delete', updateArea);
         map.on('draw.update', updateArea);
-
-
 
         function updateArea(e) {
             const data = draw.getAll();
             const answer = document.getElementById('calculated-area');
             if (data.features.length > 0) {
                 const area = turf.area(data);
-                // Restrict the area to 2 decimal points.
                 const rounded_area = Math.round(area * 100) / 100;
                 answer.innerHTML = `<p><strong>${rounded_area}</strong></p><p>square meters</p>`;
             } else {
@@ -250,10 +245,9 @@
             }
         }
 
-        map.on('draw.create', function(e) {
+        function onDrawCreate(e) {
             const feature = e.features[0];
             const polygon = feature.geometry;
-
             const area = turf.area(feature);
             const center = turf.center(feature);
             const centerCoords = center.geometry.coordinates;
@@ -268,31 +262,44 @@
                     }
                 };
                 // Send to backend via AJAX
-                $.ajax({
-                    url: '/areas',
-                    type: 'POST',
-                    dataType: 'json',
-                    contentType: 'application/json',
-                    data: JSON.stringify(savedArea),
-                    headers: {
-                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr(
-                            'content'
-                        ) // Add this if CSRF is required
-                    },
-                    success: function(response) {
-                        alert('Area saved successfully!');
-                        console.log(response);
-                        console.log(
-                            `Center:\nLongitude: ${centerCoords[0].toFixed(6)}\nLatitude: ${centerCoords[1].toFixed(6)}`
-                        );
-                    },
-                    error: function(xhr, status, error) {
-                        alert('Error saving area!');
-                        console.error(xhr.responseText || error);
-                    }
-                });
+                Save(savedArea, centerCoords);
             }
-        });
+        }
+
+        function DrawPolygon() {
+            draw.changeMode('draw_polygon');
+        }
+
+
+
+        function Save(savedArea, centerCoords) {
+            $.ajax({
+                url: '/areas',
+                type: 'POST',
+                dataType: 'json',
+                contentType: 'application/json',
+                data: JSON.stringify(savedArea),
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr(
+                        'content'
+                    ) // Add this if CSRF is required
+                },
+                success: function(response) {
+
+                    draw.deleteAll(); // Clear the drawn polygon after saving
+                    Get();
+                    alert('Area saved successfully!');
+                    console.log(response);
+                    console.log(
+                        `Center:\nLongitude: ${centerCoords[0].toFixed(6)}\nLatitude: ${centerCoords[1].toFixed(6)}`
+                    );
+                },
+                error: function(xhr, status, error) {
+                    alert('Error saving area!');
+                    console.error(xhr.responseText || error);
+                }
+            });
+        }
     </script>
 </body>
 
