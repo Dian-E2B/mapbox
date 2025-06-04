@@ -11,9 +11,13 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('polygon', function (Blueprint $table) {
-            $table->id();
-            $table->timestamps();
+        Schema::create('areas', function (Blueprint $table) {
+        $table->id();
+        $table->json('coordinates');
+        $table->double('area');
+        $table->double('center_lng');
+        $table->double('center_lat');
+        $table->timestamps();
         });
     }
 

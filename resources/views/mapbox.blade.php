@@ -47,13 +47,6 @@
 
       let isAddingMarker = false;
 
-// document.getElementById('add-marker-btn').addEventListener('click', () => {
-//   isAddingMarker = true;
-//   map.getCanvas().style.cursor = 'crosshair';
-//   alert('Click on the map to add a marker.');
-// });
-
-
 
       const offset = 0.0001;
       const polygon = {
@@ -79,13 +72,7 @@
       });
       map.setTerrain({ source: 'mapbox-dem', exaggeration: 1.5 });
 
-      // map.flyTo({
-      //   center: center,
-      //   zoom: 13,
-      //   pitch: 60,
-      //   bearing: -20,
-      //   speed: 0.5
-      // });
+     
 
       map.addLayer({
         id: 'custom-building',
@@ -168,28 +155,6 @@ map.on('click', (event) => {
   }
 });
 
-// map.on('click', (event) => {
-//   const lng = event.lngLat.lng;
-//   const lat = event.lngLat.lat;
-
-//   // Make an AJAX request to the Laravel backend to save this location
-//   fetch('/api/save-location', {
-//     method: 'POST',
-//     headers: {
-//       'Content-Type': 'application/json',
-//       'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content // CSRF Token
-//     },
-//     body: JSON.stringify({ lat, lng })
-//   })
-//   .then(response => response.json())  // Parse the JSON response
-//   .then(data => {
-//     alert(`Saved: ${data.message}`);
-//   })
-//   .catch(error => {
-//     alert('Error saving location');
-//     console.error(error);
-//   });
-// });
 
   </script>
 </body>

@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\LocationController;
+use App\Http\Controllers\AreaController;
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -27,4 +28,9 @@ Route::get('/mapbox3d', function () {
     return view('mapbox3d');
 });
 
+Route::get('/mapboxdraw', function () {
+    return view('mapboxdraw');
+});
+
 Route::post('/saveLocation', [LocationController::class, 'store']);
+Route::post('/areas', [AreaController::class, 'store']);
