@@ -58,7 +58,7 @@ p {
 
 .custom-marker {
    width: 70px;
-  width: 70px;
+    height:  3vw;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -67,5 +67,5 @@ p {
 
 .custom-marker-img {
   width: 60px;
-  width: 60px;
+  height:3vw;
 }

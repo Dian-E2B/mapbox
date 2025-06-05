@@ -92,7 +92,7 @@
             currentMarkers = [];
 
             $.get('/centers', function(markers) {
-                const iconUrl = '{{ asset('icons/sprinkler.gif') }}';
+                const iconUrl = '{{ asset('icons/sprinkler1.gif') }}';
 
                 markers.forEach(marker => {
                     const el = document.createElement('div');
@@ -156,7 +156,7 @@
                                     },
                                     properties: {
                                         polygon_code: area.polygon_code, // from DB
-                                        color: '#3a86ff',
+                                        color: '#0080ff'
                                         height: 15
                                     }
                                 }
