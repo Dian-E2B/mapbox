@@ -15,10 +15,12 @@ class AreaController extends Controller
         'area' => 'required|numeric',
         'center.lng' => 'required|numeric',
         'center.lat' => 'required|numeric',
+           'polygon_code' => 'required',
     ]);
 
     // Example save
    Area::create([
+        'polygon_code' => $request->polygon_code ?? Str::uuid(),
         'coordinates' => json_encode($data['coordinates']),
         'area' => $data['area'],
         'center_lng' => $data['center']['lng'],
@@ -32,5 +34,19 @@ class AreaController extends Controller
 {
    return response()->json(Area::all());
    
+}
+
+public function check(Request $request)
+{
+    $area = Area::where('polygon_code', $request->polygon_code)->first();
+
+    if ($area) {
+        return response()->json([
+            'exists' => true,
+            'area' => $area
+        ]);
+    }
+
+    return response()->json(['exists' => false]);
 }
 }

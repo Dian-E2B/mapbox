@@ -44,6 +44,12 @@
         Add Polygon
     </button>
 
+
+    <button id="selectBtn" onclick="selectPolygon(1)"
+        style="position: absolute; top: 100px; left: 10px; z-index: 1; padding: 10px; background: white; border: none; cursor: pointer;">
+        Select Polygon
+    </button>
+
     <div class="calculation-box">
         <p>Click the map to draw a polygon.</p>
         <div id="calculated-area"></div>
@@ -66,37 +72,7 @@
             Get();
             let isAddingMarker = false;
 
-            // map.addSource('maine', {
-            //     'type': 'geojson',
-            //     'data': {
-            //         'type': 'Feature',
-            //         'geometry': {
-            //             'type': 'Polygon',
-            //             'coordinates': [
-            //                 [
-            //                     [125.821812, 7.397899],
-            //                     [125.822349, 7.397917],
-            //                     [125.822300, 7.399815],
-            //                     [125.821848, 7.398718],
-            //                     [125.821812, 7.397899]
-            //                 ]
-            //             ]
-            //         },
-            //         'properties': {
-            //             height: 15,
-            //             color: '#0000ff'
-            //         }
-            //     }
-            // });
 
-
-
-
-
-
-
-
-            //WOBLY PART
 
             map.addSource('mapbox-dem', {
                 type: 'raster-dem',
@@ -142,7 +118,15 @@
 
         });
 
-
+        document.getElementById('selectBtn').addEventListener('click', () => {
+            // Example: Zoom into the polygon
+            const bounds = new mapboxgl.LngLatBounds();
+            const coords = map.getSource('polygon')._data.geometry.coordinates[0];
+            coords.forEach(coord => bounds.extend(coord));
+            map.fitBounds(bounds, {
+                padding: 20
+            });
+        });
 
         function Get() {
             $.ajax({
@@ -158,6 +142,18 @@
                             JSON.parse(area.coordinates) :
                             area.coordinates;
 
+
+                        // if (draw) {
+                        //     draw.add({
+                        //         type: 'Feature',
+                        //         geometry: {
+                        //             type: 'Polygon',
+                        //             coordinates: coordinates
+                        //         },
+                        //         properties: {}
+                        //     });
+                        // }
+
                         if (!map.getSource(sourceId)) {
                             map.addSource(sourceId, {
                                 type: 'geojson',
@@ -168,12 +164,39 @@
                                         coordinates: coordinates
                                     },
                                     properties: {
+                                        polygon_code: area.polygon_code, // from DB
                                         color: '#3a86ff',
                                         height: 15
                                     }
                                 }
                             });
                         }
+
+                        map.on('click', layerId, function(e) {
+                            const code = e.features[0].properties.polygon_code;
+
+                            $.ajax({
+                                url: '/check-polygon',
+                                type: 'POST',
+                                contentType: 'application/json',
+                                data: JSON.stringify({
+                                    polygon_code: code
+                                }),
+                                headers: {
+                                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr(
+                                        'content'),
+                                },
+                                success: function(res) {
+                                    alert(`Polygon Info:
+ID: ${area.id}
+Code: ${area.polygon_code}
+Area: ${area.area.toFixed(2)} sqm
+Center: (${area.center_lat}, ${area.center_lng})
+Created at: ${area.created_at}`);
+                                    // console.log(res.area); 
+                                }
+                            });
+                        });
 
 
 
@@ -217,14 +240,16 @@
 
 
 
+
+
         const draw = new MapboxDraw({
             displayControlsDefault: false,
             controls: {
                 polygon: true,
                 trash: true
             },
-            defaultMode: 'simple_select' // start with select mode, no drawing
         });
+
 
         map.addControl(draw);
         map.on('draw.create', onDrawCreate);
@@ -251,9 +276,11 @@
             const area = turf.area(feature);
             const center = turf.center(feature);
             const centerCoords = center.geometry.coordinates;
+            const polygonCode = crypto.randomUUID()
 
             if (confirm("Save this area?")) {
                 const savedArea = {
+                    polygon_code: polygonCode,
                     coordinates: polygon.coordinates,
                     area: area,
                     center: {
@@ -273,6 +300,7 @@
 
 
         function Save(savedArea, centerCoords) {
+
             $.ajax({
                 url: '/areas',
                 type: 'POST',
@@ -285,14 +313,17 @@
                     ) // Add this if CSRF is required
                 },
                 success: function(response) {
+                    draw.deleteAll();
 
-                    draw.deleteAll(); // Clear the drawn polygon after saving
-                    Get();
                     alert('Area saved successfully!');
                     console.log(response);
                     console.log(
                         `Center:\nLongitude: ${centerCoords[0].toFixed(6)}\nLatitude: ${centerCoords[1].toFixed(6)}`
                     );
+                    setTimeout(() => {
+                        Get();
+                        // draw.changeMode('simple_select');
+                    }, 100);
                 },
                 error: function(xhr, status, error) {
                     alert('Error saving area!');
