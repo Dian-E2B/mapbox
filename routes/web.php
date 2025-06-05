@@ -38,3 +38,5 @@ Route::post('/areas', [AreaController::class, 'store']);
 Route::get('/areas', [AreaController::class, 'retreive']);
 
 Route::post('/check-polygon', [AreaController::class, 'check']);
+
+Route::get('/centers', [AreaController::class, 'CheckIcons']);

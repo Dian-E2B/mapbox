@@ -9,7 +9,6 @@
     <link href="https://api.mapbox.com/mapbox-gl-js/v3.12.0/mapbox-gl.css" rel="stylesheet">
     <script src="https://api.mapbox.com/mapbox-gl-js/v3.12.0/mapbox-gl.js"></script>
 
-
     <script src="https://unpkg.com/@turf/turf@6/turf.min.js"></script>
     <script src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-draw/v1.5.0/mapbox-gl-draw.js"></script>
     <link rel="stylesheet" href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-draw/v1.5.0/mapbox-gl-draw.css"
@@ -40,14 +39,9 @@
     </button> --}}
 
     <button id="add-marker-btn" onclick="DrawPolygon('draw_polygon')"
-        style="position: absolute; top: 50px; left: 10px; z-index: 1; padding: 10px; background: white; border: none; cursor: pointer;">
+        style="position: absolute; top: 50px; left:
+        10px; z-index: 1; padding: 10px; background: white; border: none; cursor: pointer;">
         Add Polygon
-    </button>
-
-
-    <button id="selectBtn" onclick="selectPolygon(1)"
-        style="position: absolute; top: 100px; left: 10px; z-index: 1; padding: 10px; background: white; border: none; cursor: pointer;">
-        Select Polygon
     </button>
 
     <div class="calculation-box">
@@ -66,13 +60,10 @@
             zoom: 14
         });
 
-
-
         map.on('load', () => {
             Get();
+            GetIcons();
             let isAddingMarker = false;
-
-
 
             map.addSource('mapbox-dem', {
                 type: 'raster-dem',
@@ -86,47 +77,47 @@
             });
 
 
-
-
-
             map.setPitch(60); // tilt camera
             map.setBearing(-20);
 
 
-            const iconUrl = 'https://docs.mapbox.com/mapbox-gl-js/assets/custom_marker.png';
-
-
-            const el = document.createElement('div');
-            el.className = 'unclipped-marker';
-            el.style.backgroundImage = `url(${iconUrl})`;
-            el.style.width = '50px';
-            el.style.height = '50px';
-            el.style.backgroundSize = '30px 30px';
-            el.style.backgroundPosition = 'center 10px';
-            el.style.backgroundRepeat = 'no-repeat';
-
-            new mapboxgl.Marker({
-                    element: el,
-                    // offset: [0, -20],
-
-                })
-                .setPopup(new mapboxgl.Popup().setHTML('<h3>Main Office</h3>'))
-                .setLngLat(center)
-                .addTo(map);
-
-
-
         });
 
-        document.getElementById('selectBtn').addEventListener('click', () => {
-            // Example: Zoom into the polygon
-            const bounds = new mapboxgl.LngLatBounds();
-            const coords = map.getSource('polygon')._data.geometry.coordinates[0];
-            coords.forEach(coord => bounds.extend(coord));
-            map.fitBounds(bounds, {
-                padding: 20
+
+        let currentMarkers = [];
+
+        function GetIcons() {
+            // Remove old markers from the map
+            currentMarkers.forEach(marker => marker.remove());
+            currentMarkers = [];
+
+            $.get('/centers', function(markers) {
+                const iconUrl = '{{ asset('icons/sprinkler.gif') }}';
+
+                markers.forEach(marker => {
+                    const el = document.createElement('div');
+                    el.className = 'custom-marker';
+
+                    const img = document.createElement('img');
+                    img.src = iconUrl;
+                    img.className = 'custom-marker-img';
+
+                    el.appendChild(img);
+
+                    const newMarker = new mapboxgl.Marker({
+                            element: el,
+                            anchor: 'center'
+                        })
+                        .setLngLat(marker.coords)
+                        .setPopup(new mapboxgl.Popup().setHTML(
+                            `<h3>${marker.label}</h3><p>${marker.coords}</p>`))
+                        .addTo(map);
+
+                    currentMarkers.push(newMarker); // store it for later removal
+                });
             });
-        });
+        }
+
 
         function Get() {
             $.ajax({
@@ -187,13 +178,24 @@
                                         'content'),
                                 },
                                 success: function(res) {
-                                    alert(`Polygon Info:
+                                    const area = res.area;
+
+                                    const info = `Polygon Info:
 ID: ${area.id}
 Code: ${area.polygon_code}
 Area: ${area.area.toFixed(2)} sqm
 Center: (${area.center_lat}, ${area.center_lng})
-Created at: ${area.created_at}`);
-                                    // console.log(res.area); 
+Created at: ${area.created_at}`;
+
+                                    alert(info);
+                                    if (confirm(
+                                            "Do you want to do add an icon in this area?"
+                                        )) {
+
+                                        console.log("User wants to proceed!");
+                                    } else {
+                                        console.log("User canceled.");
+                                    }
                                 }
                             });
                         });
@@ -288,7 +290,6 @@ Created at: ${area.created_at}`);
                         lat: centerCoords[1]
                     }
                 };
-                // Send to backend via AJAX
                 Save(savedArea, centerCoords);
             }
         }
@@ -310,7 +311,7 @@ Created at: ${area.created_at}`);
                 headers: {
                     'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr(
                         'content'
-                    ) // Add this if CSRF is required
+                    )
                 },
                 success: function(response) {
                     draw.deleteAll();
@@ -322,7 +323,7 @@ Created at: ${area.created_at}`);
                     );
                     setTimeout(() => {
                         Get();
-                        // draw.changeMode('simple_select');
+                        GetIcons(); // refresh icons to include new center
                     }, 100);
                 },
                 error: function(xhr, status, error) {

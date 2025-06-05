@@ -18,6 +18,7 @@ return new class extends Migration
         $table->double('area');
         $table->double('center_lng');
         $table->double('center_lat');
+         $table->integer('plant_type')->nullable();
         $table->timestamps();
         });
     }
