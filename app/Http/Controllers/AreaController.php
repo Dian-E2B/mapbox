@@ -54,12 +54,13 @@ class AreaController extends Controller
     public function CheckIcons(Request $request)
     {
         $centers = DB::table('areas')
-            ->select('center_lat', 'center_lng')
+            ->select('center_lat', 'center_lng','isSprinkled')
             ->get()
             ->map(function ($area) {
                 return [
                     'coords' => [$area->center_lng, $area->center_lat], // <-- MUST BE lng, lat
-                    'label' => 'Polygon Center'
+                    'label' => 'Polygon Center',
+                    'isSprinkled' => $area->isSprinkled
                 ];
             });
 

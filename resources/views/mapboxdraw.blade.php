@@ -95,28 +95,49 @@
                 const iconUrl = '{{ asset('icons/sprinkler1.gif') }}';
 
                 markers.forEach(marker => {
-                    const el = document.createElement('div');
-                    el.className = 'custom-marker';
+                    if (marker.isSprinkled === 1) {
+                        const el = document.createElement('div');
+                        el.className = 'custom-marker';
 
-                    const img = document.createElement('img');
-                    img.src = iconUrl;
-                    img.className = 'custom-marker-img';
+                        const img = document.createElement('img');
+                        img.src = '/icons/sprinkler.png'; // no Blade `asset()` here since this is in JS
+                        img.className = 'custom-marker-img';
 
-                    el.appendChild(img);
+                        el.appendChild(img);
 
-                    const newMarker = new mapboxgl.Marker({
-                            element: el,
-                            anchor: 'center'
-                        })
-                        .setLngLat(marker.coords)
-                        .setPopup(new mapboxgl.Popup().setHTML(
-                            `<h3>${marker.label}</h3><p>${marker.coords}</p>`))
-                        .addTo(map);
+                        const markerInstance = new mapboxgl.Marker({
+                                element: el,
+                                anchor: 'center'
+                            })
+                            .setLngLat(marker.coords)
+                            .setPopup(new mapboxgl.Popup().setHTML(
+                                `<h3>${marker.label}</h3><p>${marker.coords}</p>`))
+                            .addTo(map);
 
-                    currentMarkers.push(newMarker); // store it for later removal
+                        currentMarkers.push({
+                            marker: markerInstance,
+                            el: img
+                        });
+                    }
                 });
             });
         }
+
+        map.on('zoom', () => {
+            const zoom = map.getZoom();
+
+            currentMarkers.forEach(({
+                el
+            }) => {
+
+                let scale = Math.max(0, Math.min(1, (zoom - 10) /
+                    5));
+                el.style.transform = `scale(${scale})`;
+
+
+                el.style.opacity = scale <= 0.5 ? '0' : '1';
+            });
+        });
 
 
         function Get() {
@@ -156,9 +177,9 @@
                                     },
                                     properties: {
                                         polygon_code: area.polygon_code, // from DB
-                                        color: '#0080ff'
-                                        height: 15
-                                    }
+                                        color: '#0080ff',
+                                        height: 15,
+                                    },
                                 }
                             });
                         }
@@ -210,7 +231,7 @@ Created at: ${area.created_at}`;
                                 layout: {},
                                 paint: {
                                     'fill-color': '#0080ff',
-                                    'fill-opacity': 0.2,
+                                    'fill-opacity': 0.1,
                                     'fill-outline-color': 'black'
                                 }
                             });

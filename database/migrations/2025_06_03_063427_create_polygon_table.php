@@ -18,7 +18,9 @@ return new class extends Migration
         $table->double('area');
         $table->double('center_lng');
         $table->double('center_lat');
-         $table->integer('plant_type')->nullable();
+        $table->integer('isSprinkled')->nullable();
+        $table->integer('isPlantable')->nullable();
+        $table->integer('plantState')->nullable(); //1= small, 2 = growing, 3 = fully grown
         $table->timestamps();
         });
     }
