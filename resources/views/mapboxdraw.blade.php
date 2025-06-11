@@ -15,11 +15,20 @@
         type="text/css">
 
     <script src=" https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js "></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css"
+        integrity="sha384-xOolHFLEh07PJGoPkLv1IbcEPTNtaed2xpHsD9ESMhqIYd0nLMwNLD69Npy4HI+N" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-Fy6S3B9q64WdZWQUiU+q4/2Lc9npb8tCaSX9FK7E8HnRr0Jz8D6OP9dO5Vg3Q9ct" crossorigin="anonymous">
+    </script>
+
     @vite(['resources/css/app.css', 'resources/js/app.js'])
     <style>
         body {
             margin: 0;
             padding: 0;
+            font-family: "Open Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", Helvetica, Arial, sans-serif !important;
         }
 
         #map {
@@ -38,11 +47,15 @@
         ➕ Add Marker
     </button> --}}
 
-    <button id="add-marker-btn" onclick="DrawPolygon('draw_polygon')"
-        style="position: absolute; top: 50px; left:
+
+
+    <div class="form-group" style="position: absolute; top: 50px; left:
         10px; z-index: 1; padding: 10px; background: white; border: none; cursor: pointer;">
-        Add Polygon
-    </button>
+        <div class="custom-control custom-switch">
+            <input onclick="selectPolygon()" type="checkbox" class="custom-control-input" id="toggleIconsBtn">
+            <label class="custom-control-label" for="toggleIconsBtn">Toggle this to add icons</label>
+        </div>
+    </div>
 
     <div class="calculation-box">
         <p>Click the map to draw a polygon.</p>
@@ -50,6 +63,7 @@
     </div>
 
     <script>
+        Swal.bindClickHandler();
         const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
         mapboxgl.accessToken = 'pk.eyJ1IjoiZGtlMzYwIiwiYSI6ImNtYjBmdmZubTBqNmwybXNhMW84bjBveTcifQ.YArIG5KcPE1unjo1Tp41BA';
         const center = [125.822101, 7.398548];
@@ -59,6 +73,15 @@
             center: center,
             zoom: 14
         });
+
+        let mapClicker = {
+            enabled: false
+        };
+
+        function selectPolygon() {
+            mapClicker.enabled = !mapClicker.enabled;
+            console.log(mapClicker);
+        }
 
         map.on('load', () => {
             Get();
@@ -76,23 +99,20 @@
                 exaggeration: 2.0
             });
 
-
-            map.setPitch(60); // tilt camera
+            map.setPitch(60);
             map.setBearing(-20);
-
-
         });
-
 
         let currentMarkers = [];
 
         function GetIcons() {
-            // Remove old markers from the map
-            currentMarkers.forEach(marker => marker.remove());
-            currentMarkers = [];
+
+            if (currentMarkers && currentMarkers.length > 0) {
+                currentMarkers = []; //reset lang
+            }
 
             $.get('/centers', function(markers) {
-                const iconUrl = '{{ asset('icons/sprinkler1.gif') }}';
+                const iconUrlsprinkler = '{{ asset('icons/sprinkler1.gif') }}';
 
                 markers.forEach(marker => {
                     if (marker.isSprinkled === 1) {
@@ -100,7 +120,7 @@
                         el.className = 'custom-marker';
 
                         const img = document.createElement('img');
-                        img.src = '/icons/sprinkler.png'; // no Blade `asset()` here since this is in JS
+                        img.src = iconUrlsprinkler;
                         img.className = 'custom-marker-img';
 
                         el.appendChild(img);
@@ -125,20 +145,13 @@
 
         map.on('zoom', () => {
             const zoom = map.getZoom();
-
             currentMarkers.forEach(({
                 el
-            }) => {
-
-                let scale = Math.max(0, Math.min(1, (zoom - 10) /
-                    5));
+            }) => {let scale = Math.max(0, Math.min(1, (zoom - 10) /5));
                 el.style.transform = `scale(${scale})`;
-
-
                 el.style.opacity = scale <= 0.5 ? '0' : '1';
             });
         });
-
 
         function Get() {
             $.ajax({
@@ -149,7 +162,6 @@
                     areas.forEach((area, index) => {
                         const sourceId = `polygon-${index}`;
                         const layerId = `polygon-layer-${index}`;
-
                         const coordinates = typeof area.coordinates === 'string' ?
                             JSON.parse(area.coordinates) :
                             area.coordinates;
@@ -185,40 +197,76 @@
                         }
 
                         map.on('click', layerId, function(e) {
+
                             const code = e.features[0].properties.polygon_code;
 
-                            $.ajax({
-                                url: '/check-polygon',
-                                type: 'POST',
-                                contentType: 'application/json',
-                                data: JSON.stringify({
-                                    polygon_code: code
-                                }),
-                                headers: {
-                                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr(
-                                        'content'),
-                                },
-                                success: function(res) {
-                                    const area = res.area;
+                            if (mapClicker.enabled === true) {
 
-                                    const info = `Polygon Info:
+                                $.ajax({
+                                    url: '/check-polygon',
+                                    type: 'POST',
+                                    contentType: 'application/json',
+                                    data: JSON.stringify({
+                                        polygon_code: code
+                                    }),
+                                    headers: {
+                                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]')
+                                            .attr('content'),
+                                    },
+                                    success: function(res) {
+                                        const area = res.area;
+                                        const info = `Polygon Info:
 ID: ${area.id}
 Code: ${area.polygon_code}
 Area: ${area.area.toFixed(2)} sqm
 Center: (${area.center_lat}, ${area.center_lng})
 Created at: ${area.created_at}`;
 
-                                    alert(info);
-                                    if (confirm(
-                                            "Do you want to do add an icon in this area?"
-                                        )) {
+                                        console.log(info);
+                                        // if (confirm(
+                                        //         "Do you want to do add an icon in this area?"
+                                        //     ))
 
-                                        console.log("User wants to proceed!");
-                                    } else {
-                                        console.log("User canceled.");
+                                        // {
+                                        Swal.fire({
+                                            title: "Choose an icon",
+                                            showDenyButton: true,
+                                            showCancelButton: true,
+                                            confirmButtonText: "isSprinkled",
+                                            denyButtonText: `Growing`,
+                                            toast: true,
+                                        }).then((result) => {
+
+                                            if (result.isConfirmed) {
+                                                Swal.fire("Added!", "",
+                                                    "success");
+
+                                                $.ajax({
+                                                    url: '/setterSprinkol/' + area.id + '/setSprinkol_add',
+                                                    type: 'POST',
+                                                    dataType: 'json',
+                                                    headers: {
+                                                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]')
+                                                            .attr('content')
+                                                    },
+                                                    success: function(response) {
+                                                        GetIcons();
+                                                        console.log("setterSprinkol", response);
+                                                    }
+                                                });
+
+                                            } else if (result.isDenied) {
+                                                Swal.fire("Changes are not saved","", "info");
+                                            }
+                                        });
+                                        //     console.log("User wants to proceed!");
+                                        // } else {
+                                        //     console.log("User canceled.");
+                                        // }
                                     }
-                                }
-                            });
+                                });
+                            }
+
                         });
 
 
@@ -262,9 +310,6 @@ Created at: ${area.created_at}`;
         }
 
 
-
-
-
         const draw = new MapboxDraw({
             displayControlsDefault: false,
             controls: {
@@ -273,19 +318,21 @@ Created at: ${area.created_at}`;
             },
         });
 
-
         map.addControl(draw);
         map.on('draw.create', onDrawCreate);
         map.on('draw.delete', updateArea);
         map.on('draw.update', updateArea);
 
         function updateArea(e) {
+            mapClicker = false;
+            document.getElementById('toggleIconsBtn').checked = false;
             const data = draw.getAll();
             const answer = document.getElementById('calculated-area');
             if (data.features.length > 0) {
                 const area = turf.area(data);
                 const rounded_area = Math.round(area * 100) / 100;
-                answer.innerHTML = `<p><strong>${rounded_area}</strong></p><p>square meters</p>`;
+                answer.innerHTML = `<p><strong>${rounded_area}</strong></p>
+                <p>square meters</p>`;
             } else {
                 answer.innerHTML = '';
                 if (e.type !== 'draw.delete')
@@ -294,6 +341,7 @@ Created at: ${area.created_at}`;
         }
 
         function onDrawCreate(e) {
+
             const feature = e.features[0];
             const polygon = feature.geometry;
             const area = turf.area(feature);
@@ -313,6 +361,7 @@ Created at: ${area.created_at}`;
                 };
                 Save(savedArea, centerCoords);
             }
+
         }
 
         function DrawPolygon() {
@@ -337,14 +386,20 @@ Created at: ${area.created_at}`;
                 success: function(response) {
                     draw.deleteAll();
 
-                    alert('Area saved successfully!');
+                    // alert('Area saved successfully!');
+                    Swal.fire({
+                        title: "Added!",
+                        text: "Saved successfully!",
+                        icon: "success",
+                        toast: true
+                    });
                     console.log(response);
                     console.log(
                         `Center:\nLongitude: ${centerCoords[0].toFixed(6)}\nLatitude: ${centerCoords[1].toFixed(6)}`
                     );
                     setTimeout(() => {
                         Get();
-                        GetIcons(); // refresh icons to include new center
+                        GetIcons();
                     }, 100);
                 },
                 error: function(xhr, status, error) {

@@ -40,3 +40,4 @@ Route::get('/areas', [AreaController::class, 'retreive']);
 Route::post('/check-polygon', [AreaController::class, 'check']);
 
 Route::get('/centers', [AreaController::class, 'CheckIcons']);
+Route::post('/setterSprinkol/{id?}/{action}', [AreaController::class, 'sprinkol']);

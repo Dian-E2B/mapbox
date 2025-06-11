@@ -54,7 +54,7 @@ class AreaController extends Controller
     public function CheckIcons(Request $request)
     {
         $centers = DB::table('areas')
-            ->select('center_lat', 'center_lng','isSprinkled')
+            ->select('center_lat', 'center_lng', 'isSprinkled')
             ->get()
             ->map(function ($area) {
                 return [
@@ -65,5 +65,18 @@ class AreaController extends Controller
             });
 
         return response()->json($centers);
+    }
+
+
+    public function sprinkol($id, $action)
+    {
+        if ($action === 'setSprinkol_add') {
+            $updated = Area::where('id', $id)->update(['isSprinkled' => 1]);
+            $data = ['updated' => $updated];
+        } else {
+            $data = ['updated' => false];
+        }
+
+        return response()->json($data);
     }
 }
