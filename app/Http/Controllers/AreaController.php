@@ -32,7 +32,7 @@ class AreaController extends Controller
         return response()->json(['success' => true]);
     }
 
-    public function retreive(Request $request)
+    public function retrieve(Request $request)
     {
         return response()->json(Area::all());
     }
@@ -54,13 +54,14 @@ class AreaController extends Controller
     public function CheckIcons(Request $request)
     {
         $centers = DB::table('areas')
-            ->select('center_lat', 'center_lng', 'isSprinkled')
+            ->select('center_lat', 'center_lng', 'isSprinkled','plantState')
             ->get()
             ->map(function ($area) {
                 return [
                     'coords' => [$area->center_lng, $area->center_lat], // <-- MUST BE lng, lat
                     'label' => 'Polygon Center',
-                    'isSprinkled' => $area->isSprinkled
+                    'isSprinkled' => $area->isSprinkled,
+					'plantState' => $area->plantState,
                 ];
             });
 
@@ -68,11 +69,31 @@ class AreaController extends Controller
     }
 
 
-    public function sprinkol($id, $action)
+    public function icons($id, $action)
     {
+		$area = Area::find($id);
         if ($action === 'setSprinkol_add') {
-            $updated = Area::where('id', $id)->update(['isSprinkled' => 1]);
-            $data = ['updated' => $updated];
+			if ($area->isSprinkled == 1) {
+            	$data = ['updated' => false];
+        	} else {
+            	$updated = $area->update(['isSprinkled' => 1]);
+            	$data = ['updated' => $updated];
+        	}
+        } else if ($action === 'setSprinkol_remove') {
+            if ($area->isSprinkled == 0) {
+            	$data = ['updated' => false];
+        	} else {
+				$updated = $area->update(['isSprinkled' => 0]);
+				$data = ['updated' => $updated];
+        	}
+        }
+		 else if ($action === 'setGrown_1') {
+            if ($area->plantState == 1) {
+            	$data = ['updated' => false];
+        	} else {
+				$updated = $area->update(['plantState' => 1]);
+				$data = ['updated' => $updated];
+        	}
         } else {
             $data = ['updated' => false];
         }

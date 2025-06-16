@@ -32,12 +32,10 @@ Route::get('/mapboxdraw', function () {
     return view('mapboxdraw');
 });
 
-Route::post('/saveLocation', [LocationController::class, 'store']);
+// Route::post('/saveLocation', [LocationController::class, 'store']);
 Route::post('/areas', [AreaController::class, 'store']);
-
-Route::get('/areas', [AreaController::class, 'retreive']);
-
+Route::get('/areas', [AreaController::class, 'retrieve']);
 Route::post('/check-polygon', [AreaController::class, 'check']);
 
 Route::get('/centers', [AreaController::class, 'CheckIcons']);
-Route::post('/setterSprinkol/{id?}/{action}', [AreaController::class, 'sprinkol']);
+Route::post('/setterIcons/{id?}/{action}', [AreaController::class, 'icons']);
