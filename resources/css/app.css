@@ -57,7 +57,7 @@ p {
 }
 
 .custom-marker {
-    
+    padding: 10px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -65,13 +65,15 @@ p {
 }
 
 .custom-marker-img {
+	padding: 10px;
  width:6vw;
  height:  (0.1rem, 3vw, 0.1rem);
 }
 
 .custom-marker-growing-img {
+	padding: 15px;
   width: 6vw;
-  height: clamp(0.1rem, 5vw, 3rem);
+  height:  (0.1rem, 3vw, 0.1rem);
   
 }
 

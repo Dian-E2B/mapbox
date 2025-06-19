@@ -62,19 +62,19 @@
 
 	<script>
 		Swal.bindClickHandler();
-        const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-        mapboxgl.accessToken = 'pk.eyJ1IjoiZGtlMzYwIiwiYSI6ImNtYjBmdmZubTBqNmwybXNhMW84bjBveTcifQ.YArIG5KcPE1unjo1Tp41BA';
-        const center = [125.822101, 7.398548];
-        const map = new mapboxgl.Map({
-            container: 'map',
-            style: 'mapbox://styles/mapbox/satellite-streets-v12',
-            center: center,
-            zoom: 14
-        });
+	const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+	mapboxgl.accessToken = 'pk.eyJ1IjoiZGtlMzYwIiwiYSI6ImNtYjBmdmZubTBqNmwybXNhMW84bjBveTcifQ.YArIG5KcPE1unjo1Tp41BA';
+	const center = [125.822101, 7.398548];
+	const map = new mapboxgl.Map({
+		container: 'map',
+		style: 'mapbox://styles/mapbox/satellite-streets-v12',
+		center: center,
+		zoom: 14
+	});
 
-        let mapClicker = {
-            enabled: false
-        };
+	let mapClicker = {
+		enabled: false
+	};
 
         function selectPolygon() {
             mapClicker.enabled = !mapClicker.enabled;
